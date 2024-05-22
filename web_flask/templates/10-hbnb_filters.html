@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HBNB</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/3-footer.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/3-header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/4-common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/6-filters.css') }}">
+</head>
+<body>
+    <header class="clearfix">
+        <div class="h_logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="HolbertonBnB">
+            <h1>HolbertonBnB</h1>
+        </div>
+        <div class="h_description">Search for awesome places around the world</div>
+    </header>
+    <div class="container">
+        <section class="filters">
+            <div class="filter">
+                <h2>States</h2>
+                <div class="popover">
+                    <div class="popover-content">
+                        {% for state in states %}
+                            <label class="popover-check">
+                                <input type="checkbox" name="state" value="{{ state.id }}">
+                                {{ state.name }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="filter">
+                <h2>Amenities</h2>
+                <div class="popover">
+                    <div class="popover-content">
+                        {% for amenity in amenities %}
+                            <label class="popover-check">
+                                <input type="checkbox" name="amenity" value="{{ amenity.id }}">
+                                {{ amenity.name }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer class="footer">
+        <div class="container">
+            <p class="text-muted">Holberton School</p>
+        </div>
+    </footer>
+</body>
+</html>
+
