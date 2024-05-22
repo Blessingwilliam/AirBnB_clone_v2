@@ -15,14 +15,12 @@ class State(BaseModel, Base):
 
     if models.storage_t != 'db':
         @property
-        def cities(self):
-            """getter method for cities
-            Returns the list of City objects from storage linked to the current State
-            """
-            city_list = []
-            all_cities = models.storage.all(City)
-            for city in all_cities.values():
-                if city.state_id == self.id:
-                    city_list.append(city)
-            return city_list
+          def cities(self):
+        """Getter attribute cities that returns the list of City objects from storage linked to the current State"""
+        from models import storage
+        from models.city import City
+        if storage_t != "db":
+            all_cities = storage.all(City)
+            return [city for city in all_cities.values() if city.state_id == self.id]
+        return self.cities
 

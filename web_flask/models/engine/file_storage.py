@@ -1,63 +1,71 @@
 #!/usr/bin/python3
-"""
-Contains the FileStorage class
-"""
+"""This module defines the DBStorage class"""
 
-import json
-from models.base_model import BaseModel
+from os import getenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
+from models.base_model import BaseModel, Base
 from models.user import User
-from models.place import Place
 from models.state import State
 from models.city import City
+from models.place import Place
 from models.amenity import Amenity
 from models.review import Review
 
+class DBStorage:
+    """DB storage class"""
 
-class FileStorage:
-    """serializes instances to a JSON file & deserializes back to instances"""
+    __engine = None
+    __session = None
 
-    __file_path = "file.json"
-    __objects = {}
+    def __init__(self):
+        """Constructor"""
+        self.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'.
+                                      format(getenv('HBNB_MYSQL_USER'),
+                                             getenv('HBNB_MYSQL_PWD'),
+                                             getenv('HBNB_MYSQL_HOST'),
+                                             getenv('HBNB_MYSQL_DB')),
+                                      pool_pre_ping=True)
+        if getenv('HBNB_ENV') == 'test':
+            Base.metadata.drop_all(self.__engine)
 
     def all(self, cls=None):
-        """Returns the list of objects of one type of class.
-        Args:
-            cls (class): class type
-        """
+        """Returns a dictionary of all objects"""
+        classes = [User, State, City, Place, Review, Amenity]
+        objects = {}
         if cls is None:
-            return self.__objects
-        cls_dict = {}
-        for key, value in self.__objects.items():
-            if type(value) == cls:
-                cls_dict[key] = value
-        return cls_dict
+            for cls in classes:
+                for obj in self.__session.query(cls).all():
+                    key = "{}.{}".format(cls.__name__, obj.id)
+                    objects[key] = obj
+        else:
+            for obj in self.__session.query(cls).all():
+                key = "{}.{}".format(cls.__name__, obj.id)
+                objects[key] = obj
+        return objects
 
     def new(self, obj):
-        """sets in __objects the obj with key <obj class name>.id"""
+        """Adds the object to the current database session"""
         if obj:
-            key = obj.__class__.__name__ + "." + obj.id
-            self.__objects[key] = obj
+            self.__session.add(obj)
 
     def save(self):
-        """serializes __objects to the JSON file (path: __file_path)"""
-        json_obj = {}
-        for key in self.__objects:
-            json_obj[key] = self.__objects[key].to_dict()
-        with open(self.__file_path, 'w') as f:
-            json.dump(json_obj, f)
+        """Commits all changes of the current database session"""
+        self.__session.commit()
+
+    def delete(self, obj=None):
+        """Deletes obj from the current database session"""
+        if obj:
+            self.__session.delete(obj)
 
     def reload(self):
-        """deserializes the JSON file to __objects"""
-        try:
-            with open(self.__file_path, 'r') as f:
-                json_obj = json.load(f)
-            for key in json_obj:
-                class_name = key.split('.')[0]
-                self.__objects[key] = eval(class_name)(**json_obj[key])
-        except Exception:
-            pass
+        """Creates all tables in the database and the current database session"""
+        Base.metadata.create_all(self.__engine)
+        session_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
+        Session = scoped_session(session_factory)
+        self.__session = Session()
 
     def close(self):
-        """Call reload() method for deserializing the JSON file to objects"""
-        self.reload()
+        """Call remove() method on the private session attribute (self.__session)"""
+        self.__session.remove()
 
